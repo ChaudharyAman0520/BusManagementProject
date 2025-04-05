@@ -1,6 +1,6 @@
 // src/components/BookingForm.js
 import React, { useState } from 'react';
-import { allocateSeat } from '../api/seatallocator';
+import { allocateSeat } from '../api/seatAllocator';
 
 function BookingForm() {
   const [studentId, setStudentId] = useState('');
