@@ -1,13 +1,10 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import BookingForm from './components/BookingForm';
 import StudentLogin from './components/StudentLogin';
 import StudentRegister from './components/StudentRegister';
-import Dashboard from './components/Dashboard';
 import SeatAllocator from './components/seatallocator';
 import CheckSeatStatus from './components/CheckSeatStatus';
-
+import StudentProfile from './components/StudentProfile';
 
 function App() {
   return (
@@ -15,11 +12,9 @@ function App() {
       <Routes>
         <Route path="/" element={<StudentLogin />} />
         <Route path="/register" element={<StudentRegister />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/booking" element={<BookingForm />} />
-        <Route path="/seatallocator" element={<SeatAllocator />} />
-        <Route path="/check-status" element={<CheckSeatStatus />} />
-
+        <Route path="/student-profile" element={<StudentProfile />} />
+        <Route path="/seat-allocator" element={<SeatAllocator />} />
+        <Route path="/check-seat-status" element={<CheckSeatStatus />} />
       </Routes>
     </Router>
   );

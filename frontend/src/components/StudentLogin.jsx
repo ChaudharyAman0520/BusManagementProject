@@ -23,7 +23,8 @@ function StudentLogin() {
 
       const data = await response.json();
       if (response.ok) {
-        navigate('/dashboard');
+        localStorage.setItem('studentId', studentId);
+        navigate('/student-profile'); // ✅ Go to dashboard
       } else {
         setError(data.message || 'Login failed');
       }
@@ -31,7 +32,6 @@ function StudentLogin() {
       setError('Server error');
     }
   };
-
 
   return (
     <div className="login-container">
@@ -55,8 +55,8 @@ function StudentLogin() {
         <div className="register-link">
           Don't have an account?{' '}
           <a href="/register" style={{ color: '#007bff', textDecoration: 'none' }}>
-    Register here
-         </a>
+            Register here
+          </a>
         </div>
       </div>
     </div>
