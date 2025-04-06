@@ -1,24 +1,27 @@
 // src/App.js
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import BookingForm from './components/BookingForm';
-import './App.css'; // Import your CSS file for styling
+import StudentLogin from './components/StudentLogin';
+import StudentRegister from './components/StudentRegister';
+import Dashboard from './components/Dashboard';
+import SeatAllocator from './components/seatallocator';
+import CheckSeatStatus from './components/CheckSeatStatus';
+
 
 function App() {
-  const [loading, setLoading] = useState(false);
-
-  const handleLoading = (isLoading) => {
-    setLoading(isLoading);
-  };
-
   return (
-    <div className="App">
-      <h1>Bus Seat Allocation System</h1>
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <BookingForm onLoading={handleLoading} />
-      )}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<StudentLogin />} />
+        <Route path="/register" element={<StudentRegister />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/booking" element={<BookingForm />} />
+        <Route path="/seatallocator" element={<SeatAllocator />} />
+        <Route path="/check-status" element={<CheckSeatStatus />} />
+
+      </Routes>
+    </Router>
   );
 }
 

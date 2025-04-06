@@ -31,3 +31,14 @@ button:hover {
 p {
   color: red;
 }
+
+nav ul {
+  display: flex;
+  list-style: none;
+  gap: 1rem;
+  padding: 0;
+}
+
+nav ul li {
+  margin: 0;
+}
