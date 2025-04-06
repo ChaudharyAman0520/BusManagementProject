@@ -1,5 +1,6 @@
-// src/components/CheckSeatStatus.jsx
 import React, { useState } from 'react';
+import './CheckSeatStatus.css';
+
 
 function CheckSeatStatus() {
   const [busId, setBusId] = useState('');
@@ -24,25 +25,22 @@ function CheckSeatStatus() {
   };
 
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>🚌 Check Seat Status</h2>
+    <div className="page-container">
+      <div className="form-box">
+        <h2>🚌 Check Seat Status</h2>
         <input
           type="text"
           placeholder="Enter Bus ID"
           value={busId}
           onChange={(e) => setBusId(e.target.value)}
-          style={styles.input}
         />
-        <button onClick={handleCheckStatus} style={styles.button}>
-          Check
-        </button>
+        <button onClick={handleCheckStatus}>Check</button>
 
-        {error && <p style={styles.error}>{error}</p>}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
 
         {seatInfo && (
-          <div style={styles.results}>
-            <h3>Filled Seats for Bus {busId}</h3>
+          <div className="result-container">
+            <h4>Filled Seats for Bus {busId}</h4>
             <ul>
               {seatInfo.filled_seats.map((seat, index) => (
                 <li key={index}>Seat {seat}</li>
@@ -54,56 +52,5 @@ function CheckSeatStatus() {
     </div>
   );
 }
-
-const styles = {
-  wrapper: {
-    height: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(to right, #6a11cb, #2575fc)',
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: '2rem',
-    borderRadius: '10px',
-    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
-    width: '100%',
-    maxWidth: '400px',
-    textAlign: 'center',
-  },
-  title: {
-    marginBottom: '1.5rem',
-    color: '#333',
-  },
-  input: {
-    width: '100%',
-    padding: '12px',
-    margin: '10px 0',
-    borderRadius: '6px',
-    border: '1px solid #ccc',
-    fontSize: '16px',
-  },
-  button: {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '6px',
-    backgroundColor: '#007bff',
-    color: '#fff',
-    fontSize: '16px',
-    border: 'none',
-    cursor: 'pointer',
-    marginTop: '10px',
-  },
-  error: {
-    color: 'red',
-    marginTop: '1rem',
-    fontWeight: 'bold',
-  },
-  results: {
-    marginTop: '1.5rem',
-    textAlign: 'left',
-  },
-};
 
 export default CheckSeatStatus;
