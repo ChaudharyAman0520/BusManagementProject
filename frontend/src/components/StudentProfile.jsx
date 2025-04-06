@@ -10,9 +10,13 @@ function StudentProfile() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('studentId'); // Clear session
-    navigate('/'); // ✅ Back to login
+    // Clear session data if you stored any (e.g., localStorage/sessionStorage)
+    sessionStorage.clear(); // or localStorage.clear()
+  
+    // Navigate to login and replace history so back button doesn't return
+    navigate('/', { replace: true });
   };
+  
 
   return (
     <div className="profile-container">
