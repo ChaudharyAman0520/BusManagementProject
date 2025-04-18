@@ -1,20 +1,22 @@
+// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import StudentLogin from './components/StudentLogin';
-import StudentRegister from './components/StudentRegister';
-import SeatAllocator from './components/seatallocator';
-import CheckSeatStatus from './components/CheckSeatStatus';
-import StudentProfile from './components/StudentProfile';
+import Login from './components/Login';
+import Register from './components/Register';
+import Dashboard from './components/Dashboard'; // Import Dashboard component
+import BookSeat from './components/Bookseat'; // You will need to create this component
+import CheckSeatStatus from './components/Checkseatstatus'; // You will need to create this component
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<StudentLogin />} />
-        <Route path="/register" element={<StudentRegister />} />
-        <Route path="/student-profile" element={<StudentProfile />} />
-        <Route path="/seat-allocator" element={<SeatAllocator />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/book-seat" element={<BookSeat />} />
         <Route path="/check-seat-status" element={<CheckSeatStatus />} />
+        <Route path="/" element={<Login />} /> {/* Default route to Login */}
       </Routes>
     </Router>
   );
