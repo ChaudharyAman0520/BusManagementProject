@@ -1,33 +1,27 @@
-// src/Dashboard.jsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
-const Dashboard = () => {
+function Dashboard() {
   const navigate = useNavigate();
+  const { studentId } = useParams();
 
-  const handleBookSeat = () => {
-    navigate('/book-seat'); // Navigate to book seat page
-  };
-
-  const handleCheckSeatStatus = () => {
-    navigate('/check-seat-status'); // Navigate to check seat status page
-  };
-
+  // Handle logout
   const handleLogout = () => {
-    // Clear any user session data if necessary (e.g., localStorage or context)
-    navigate('/login'); // Navigate back to login page
+    // Clear user session/token
+    localStorage.removeItem('authToken');  // or sessionStorage.removeItem('authToken');
+    
+    // Redirect to login page and prevent going back
+    navigate('/login', { replace: true });
   };
 
   return (
-    <div className="dashboard">
-      <h2>Welcome to the Dashboard</h2>
-      <div className="options">
-        <button onClick={handleBookSeat}>Book Seat</button>
-        <button onClick={handleCheckSeatStatus}>Check Seat Status</button>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
+    <div className="container">
+      <h2>Welcome, Student {studentId}!</h2>
+      {/* Book a Seat button with dynamic busId */}
+      <button onClick={() => navigate(`/seat-layout/${studentId}/B1`)}>Book a Seat</button>
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
-};
+}
 
 export default Dashboard;
