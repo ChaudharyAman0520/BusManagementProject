@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import './App.css'; // Make sure global styles like `.seat`, `.seat-row`, etc. are here
 
 function SeatLayout() {
   const navigate = useNavigate();
@@ -50,18 +51,43 @@ function SeatLayout() {
     <div className="container">
       <h2>Seat Layout for Bus {busId}</h2>
       {message && <p>{message}</p>}
-      <div className="seats">
-        {seats.map((seat) => (
-          <div
-            key={seat.seat_id}
-            className={`seat ${seat.status} ${selectedSeat === seat.seat_id ? 'selected' : ''}`}
-            onClick={() => setSelectedSeat(seat.seat_id)}
-          >
-            {seat.seat_id}
-          </div>
-        ))}
+
+      <div className="bus-seats">
+        {seats.length > 0 &&
+          [...Array(Math.ceil(seats.length / 4))].map((_, rowIndex) => {
+            const start = rowIndex * 4;
+            const rowSeats = seats.slice(start, start + 4);
+            return (
+              <div className="seat-row" key={rowIndex}>
+                <div className="seat-block">
+                  {rowSeats.slice(0, 2).map((seat) => (
+                    <div
+                      key={seat.seat_id}
+                      className={`seat ${seat.status} ${selectedSeat === seat.seat_id ? 'selected' : ''}`}
+                      onClick={() => seat.status !== 'booked' && setSelectedSeat(seat.seat_id)}
+                    >
+                      {seat.seat_id}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ width: '40px' }} /> {/* Aisle */}
+                <div className="seat-block">
+                  {rowSeats.slice(2, 4).map((seat) => (
+                    <div
+                      key={seat.seat_id}
+                      className={`seat ${seat.status} ${selectedSeat === seat.seat_id ? 'selected' : ''}`}
+                      onClick={() => seat.status !== 'booked' && setSelectedSeat(seat.seat_id)}
+                    >
+                      {seat.seat_id}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
       </div>
-      <button onClick={handleBookSeat}>Book Selected Seat</button>
+
+      <button onClick={handleBookSeat} className="book-button">Book Selected Seat</button>
     </div>
   );
 }

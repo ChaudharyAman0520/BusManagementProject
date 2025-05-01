@@ -30,7 +30,7 @@ function Login() {
 
   return (
     <div className="container">
-      <h2>Login</h2>
+      <h2>Student Login</h2>
       <form onSubmit={handleLogin}>
         <input
           type="text"
@@ -53,7 +53,12 @@ function Login() {
 
       <p>
         Don’t have an account? <Link to="/register">Register here</Link>
-      </p> {/* ✅ Add this line */}
+      </p>
+
+      {/* Add Admin Login Option */}
+      <div className="admin-login-option">
+        <p>Not a student? <Link to="/admin-login">Login as Admin</Link></p>
+      </div>
     </div>
   );
 }

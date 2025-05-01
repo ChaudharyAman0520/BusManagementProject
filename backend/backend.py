@@ -47,7 +47,7 @@ def fetch_seat_status(bus_id):
     cursor.execute("SELECT seat_id, status FROM seats WHERE bus_id = %s", (bus_id,))
     seats = cursor.fetchall()
     conn.close()
-    return seats  # Already has seat_id and status
+    return seats
 
 # =============== Fetch Available Seats for a Bus ===============
 def fetch_available_seats(bus_id):
@@ -60,7 +60,7 @@ def fetch_available_seats(bus_id):
     conn.close()
     return [seat['seat_id'] for seat in available_seats]
 
-# =============== Fetch Filled Seats (used in /seat-layout) ===============
+# =============== Fetch Filled Seats for a Bus ===============
 def fetch_filled_seats(bus_id):
     conn = get_db_connection()
     if not conn:
@@ -107,7 +107,6 @@ def allocate_seat(student_id, bus_id, seat_id):
             else:
                 return {"status": "error", "message": str(e)}
 
-
 # =============== Register Student ===============
 def register_student(student_id, name, password):
     conn = get_db_connection()
@@ -140,3 +139,65 @@ def login_student(student_id, password):
     if student:
         return {"status": "success", "message": f"Student {student_id} logged in successfully"}
     return {"status": "error", "message": "Invalid student ID or password"}
+
+# =============== Admin Functions ===============
+
+# Fetch Admin Stats (Example: total buses, total bookings, total students)
+def get_admin_stats():
+    conn = get_db_connection()
+    if not conn:
+        return {"status": "error", "message": "Database connection error"}
+    cursor = conn.cursor(dictionary=True)
+
+    # Get total buses
+    cursor.execute("SELECT COUNT(*) AS total_buses FROM buses")
+    total_buses = cursor.fetchone()['total_buses']
+
+    # Get total bookings
+    cursor.execute("SELECT COUNT(*) AS total_bookings FROM bookings")
+    total_bookings = cursor.fetchone()['total_bookings']
+
+    # Get total students
+    cursor.execute("SELECT COUNT(*) AS total_students FROM students")
+    total_students = cursor.fetchone()['total_students']
+
+    conn.close()
+
+    return {
+        "total_buses": total_buses,
+        "total_bookings": total_bookings,
+        "total_students": total_students
+    }
+
+# Fetch All Buses
+def fetch_all_buses():
+    conn = get_db_connection()
+    if not conn:
+        return {"status": "error", "message": "Database connection error"}
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM buses")
+    buses = cursor.fetchall()
+    conn.close()
+    return buses
+
+# Fetch All Bookings
+def fetch_all_bookings():
+    conn = get_db_connection()
+    if not conn:
+        return {"status": "error", "message": "Database connection error"}
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM bookings")
+    bookings = cursor.fetchall()
+    conn.close()
+    return bookings
+
+# Fetch All Seats (Details)
+def fetch_all_seats():
+    conn = get_db_connection()
+    if not conn:
+        return {"status": "error", "message": "Database connection error"}
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM seats")
+    seats = cursor.fetchall()
+    conn.close()
+    return seats
