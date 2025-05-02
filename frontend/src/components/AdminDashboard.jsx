@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom';
 function AdminDashboard() {
   const [stats, setStats] = useState({});
   const [buses, setBuses] = useState([]);
+  const [newBusId, setNewBusId] = useState('');
+  const [newBusLocation, setNewBusLocation] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -36,6 +39,56 @@ function AdminDashboard() {
     fetchBuses();
   }, []);
 
+  const handleAddBus = async () => {
+    if (!newBusId || !newBusLocation) {
+      setMessage('Please provide both bus ID and location.');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/admin/add-bus', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bus_id: newBusId, location: newBusLocation }),
+      });
+
+      const data = await res.json();
+      if (data.status === 'success') {
+        setMessage('Bus added successfully!');
+        setNewBusId('');
+        setNewBusLocation('');
+        setBuses([...buses, { bus_id: newBusId, location: newBusLocation }]);
+      } else {
+        setMessage('Failed to add bus.');
+      }
+    } catch (err) {
+      setMessage('Error adding bus.');
+    }
+  };
+
+  const handleRemoveBus = async (busId) => {
+    const confirm = window.confirm(`Are you sure you want to remove bus ${busId}?`);
+    if (!confirm) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/admin/remove-bus/${busId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+      if (data.status === 'success') {
+        setMessage('Bus removed successfully!');
+        setBuses(buses.filter(bus => bus.bus_id !== busId));
+      } else {
+        setMessage('Failed to remove bus.');
+      }
+    } catch (err) {
+      setMessage('Error removing bus.');
+    }
+  };
+
   if (loading) {
     return <div className="container"><p>Loading dashboard...</p></div>;
   }
@@ -57,11 +110,31 @@ function AdminDashboard() {
 
       <div className="dashboard-section">
         <h3>Manage Buses</h3>
+
+        <div>
+          <h4>Add New Bus</h4>
+          <input
+            type="text"
+            placeholder="Bus ID"
+            value={newBusId}
+            onChange={(e) => setNewBusId(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Location"
+            value={newBusLocation}
+            onChange={(e) => setNewBusLocation(e.target.value)}
+          />
+          <button onClick={handleAddBus}>Add Bus</button>
+        </div>
+
+        <div>{message && <p>{message}</p>}</div>
+
         <ul>
           {buses.map((bus) => (
             <li key={bus.bus_id}>
               {bus.bus_id} - {bus.location} &nbsp;
-              <Link to={`/admin/manage-bus/${bus.bus_id}`}>Manage</Link>
+              <button onClick={() => handleRemoveBus(bus.bus_id)}>Remove</button>
             </li>
           ))}
         </ul>

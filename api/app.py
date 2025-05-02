@@ -110,6 +110,23 @@ def allocate_seat():
     result = backend.allocate_seat(student_id, bus_id, preferred_seat)
     return jsonify(result)
 
+@app.route('/admin/remove-seat/<seat_id>', methods=['DELETE'])
+def remove_seat_route(seat_id):
+    result = backend.delete_seat(seat_id)
+    return jsonify(result)
+
+@app.route('/admin/add-bus', methods=['POST'])
+def add_bus():
+    data = request.json
+    bus_id = data['bus_id']
+    location = data['location']
+    result = backend.add_bus(bus_id, location)
+    return jsonify(result)
+
+@app.route('/admin/remove-bus/<bus_id>', methods=['DELETE'])
+def remove_bus(bus_id):
+    result = backend.remove_bus(bus_id)
+    return jsonify(result)
 
 # =============== Run the Flask app ===============
 if __name__ == '__main__':

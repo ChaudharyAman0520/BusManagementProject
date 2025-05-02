@@ -201,3 +201,70 @@ def fetch_all_seats():
     seats = cursor.fetchall()
     conn.close()
     return seats
+
+def delete_seat(seat_id):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM seats WHERE seat_id = %s", (seat_id,))
+        connection.commit()
+        return {'status': 'success', 'message': 'Seat removed successfully'}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+def add_bus(bus_id, location):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Add bus to the buses table
+        cursor.execute("INSERT INTO buses (bus_id, location) VALUES (%s, %s)", (bus_id, location))
+
+        # Create 8 default seats for the bus (1A-1D, 2A-2D)
+        seats = [
+            ('1A', bus_id, location, 'available'),
+            ('1B', bus_id, location, 'available'),
+            ('1C', bus_id, location, 'available'),
+            ('1D', bus_id, location, 'available'),
+            ('2A', bus_id, location, 'available'),
+            ('2B', bus_id, location, 'available'),
+            ('2C', bus_id, location, 'available'),
+            ('2D', bus_id, location, 'available')
+        ]
+        
+        # Insert seats into the seats table
+        cursor.executemany("INSERT INTO seats (seat_id, bus_id, location, status) VALUES (%s, %s, %s, %s)", seats)
+        
+        connection.commit()
+        return {'status': 'success', 'message': 'Bus and seats added successfully'}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+# =============== Remove Bus and Associated Seats ===============
+def remove_bus(bus_id):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # First, remove the seats associated with the bus
+        cursor.execute("DELETE FROM seats WHERE bus_id = %s", (bus_id,))
+
+        # Then, remove the bus itself from the buses table
+        cursor.execute("DELETE FROM buses WHERE bus_id = %s", (bus_id,))
+        
+        connection.commit()
+        return {'status': 'success', 'message': 'Bus and associated seats removed successfully'}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()

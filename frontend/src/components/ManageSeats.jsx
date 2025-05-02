@@ -1,32 +1,67 @@
-// src/pages/ManageSeats.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 function ManageSeats() {
   const [seats, setSeats] = useState([]);
 
   useEffect(() => {
-    const fetchSeats = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/admin/seats');
-        const data = await response.json();
-        setSeats(data.seats || []);
-      } catch (err) {
-        console.error('Error fetching seats:', err);
-      }
-    };
-    fetchSeats();
+    fetch('http://localhost:5000/admin/seats')
+      .then((res) => res.json())
+      .then((data) => setSeats(data.seats || []));
   }, []);
 
+  const handleRemoveSeat = async (seatId) => {
+    const confirm = window.confirm('Are you sure you want to remove this seat?');
+    if (!confirm) return;
+  
+    try {
+      const res = await fetch(`http://localhost:5000/admin/remove-seat/${seatId}`, {
+        method: 'DELETE',
+      });
+  
+      if (!res.ok) {
+        throw new Error('Failed to remove seat: ' + res.statusText);
+      }
+  
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert('Seat removed!');
+        setSeats((prev) => prev.filter((seat) => seat.seat_id !== seatId));
+      } else {
+        alert('Failed to remove seat.');
+      }
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+  
+
   return (
-    <div>
-      <h2>Manage Seat Allocations</h2>
-      <ul>
-        {seats.map((seat) => (
-          <li key={seat.seat_id}>
-            Bus {seat.bus_id} - Seat {seat.seat_id} - {seat.status}
-          </li>
-        ))}
-      </ul>
+    <div className="container">
+      <h2>Manage Seats</h2>
+      <table className="styled-table">
+        <thead>
+          <tr>
+            <th>Seat ID</th>
+            <th>Bus ID</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {seats.map((seat) => (
+            <tr key={seat.seat_id}>
+              <td>{seat.seat_id}</td>
+              <td>{seat.bus_id}</td>
+              <td>{seat.location}</td>
+              <td>{seat.status}</td>
+              <td>
+                <button onClick={() => handleRemoveSeat(seat.seat_id)}>Remove</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
