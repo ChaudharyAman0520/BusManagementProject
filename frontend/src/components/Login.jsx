@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // ✅ include Link
+import { useNavigate, Link } from 'react-router-dom';
+import { TextField, Button, Paper, Typography, Container } from '@mui/material';
 
 function Login() {
   const navigate = useNavigate();
@@ -8,57 +9,88 @@ function Login() {
   const [message, setMessage] = useState('');
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('http://localhost:5000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_id: studentId, password }),
-      });
+  e.preventDefault();
+  try {
+    const response = await fetch('http://localhost:5000/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: studentId, password }),
+    });
 
-      const data = await response.json();
-      if (data.status === 'success') {
-        setMessage('Login successful!');
-        setTimeout(() => navigate(`/dashboard/${studentId}`), 1500);
-      } else {
-        setMessage(data.message || 'Login failed.');
-      }
-    } catch (error) {
-      setMessage('An error occurred. Please try again.');
+    const data = await response.json();
+    if (data.status === 'success') {
+      setMessage('Login successful!');
+      
+      // Store student ID in localStorage
+      localStorage.setItem('studentId', studentId);
+      
+      setTimeout(() => navigate(`/dashboard/${studentId}`), 1500);
+    } else {
+      setMessage(data.message || 'Login failed.');
     }
-  };
+  } catch (error) {
+    setMessage('An error occurred. Please try again.');
+  }
+};
 
   return (
-    <div className="container">
-      <h2>Student Login</h2>
-      <form onSubmit={handleLogin}>
-        <input
-          type="text"
-          placeholder="Student ID"
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Login</button>
-      </form>
+    <div style={{
+     backgroundImage: 'url(https://plus.unsplash.com/premium_photo-1661963542752-9a8a1d72fb28?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      height: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    }}>
+      <Container component="main" maxWidth="xs">
+        <Paper elevation={4} style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>
+          <Typography variant="h4" align="center" gutterBottom>
+            Student Login
+          </Typography>
 
-      {message && <p>{message}</p>}
+          <form onSubmit={handleLogin}>
+            <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              label="Student ID"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+            />
+            <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              style={{ marginTop: '20px' }}
+            >
+              Login
+            </Button>
+          </form>
 
-      <p>
-        Don’t have an account? <Link to="/register">Register here</Link>
-      </p>
+          {message && <Typography variant="body2" color="error" align="center" style={{ marginTop: '10px' }}>{message}</Typography>}
 
-      {/* Add Admin Login Option */}
-      <div className="admin-login-option">
-        <p>Not a student? <Link to="/admin-login">Login as Admin</Link></p>
-      </div>
+          <Typography variant="body2" align="center" style={{ marginTop: '10px' }}>
+            Don’t have an account? <Link to="/register">Register here</Link>
+          </Typography>
+
+          <div style={{ textAlign: 'center', marginTop: '10px' }}>
+            <p>Not a student? <Link to="/admin-login">Login as Admin</Link></p>
+          </div>
+        </Paper>
+      </Container>
     </div>
   );
 }

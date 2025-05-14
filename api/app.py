@@ -82,12 +82,12 @@ def get_locations():
     locations = backend.fetch_locations()
     return jsonify({"locations": [loc['location'] for loc in locations]})
 
-
 @app.route('/buses/<location>', methods=['GET'])
 def get_buses(location):
+    print(f"Received request for buses at location: {location}")  # Log request access
     buses = backend.fetch_buses_for_location(location)
+    print(f"Fetched buses: {buses}")  # Log the buses data
     return jsonify({"buses": buses})
-
 
 @app.route('/seat-status/<bus_id>', methods=['GET'])
 def seat_status(bus_id):
@@ -100,15 +100,19 @@ def seat_layout(bus_id):
     seats = backend.fetch_seat_status(bus_id)
     return jsonify({"bus_id": bus_id, "seats": seats})
 
-
 @app.route('/allocate-seat', methods=['POST'])
 def allocate_seat():
     data = request.json
     student_id = data['student_id']
-    bus_id = data['bus_id']
-    preferred_seat = data['seat_id']
-    result = backend.allocate_seat(student_id, bus_id, preferred_seat)
+    location = data['location']
+    
+    print(f"Allocating seat for student {student_id} at location {location}")
+
+    result = backend.allocate_seat(student_id, location)  # Assuming this updates the seat status
+    print("Result from seat allocation:", result)
+
     return jsonify(result)
+
 
 @app.route('/admin/remove-seat/<seat_id>', methods=['DELETE'])
 def remove_seat_route(seat_id):

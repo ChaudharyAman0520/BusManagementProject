@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Box, Container, Paper, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 
 function ManageSeats() {
   const [seats, setSeats] = useState([]);
@@ -12,16 +13,16 @@ function ManageSeats() {
   const handleRemoveSeat = async (seatId) => {
     const confirm = window.confirm('Are you sure you want to remove this seat?');
     if (!confirm) return;
-  
+
     try {
       const res = await fetch(`http://localhost:5000/admin/remove-seat/${seatId}`, {
         method: 'DELETE',
       });
-  
+
       if (!res.ok) {
         throw new Error('Failed to remove seat: ' + res.statusText);
       }
-  
+
       const data = await res.json();
       if (data.status === 'success') {
         alert('Seat removed!');
@@ -33,35 +34,60 @@ function ManageSeats() {
       alert(`Error: ${error.message}`);
     }
   };
-  
 
   return (
-    <div className="container">
-      <h2>Manage Seats</h2>
-      <table className="styled-table">
-        <thead>
-          <tr>
-            <th>Seat ID</th>
-            <th>Bus ID</th>
-            <th>Location</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {seats.map((seat) => (
-            <tr key={seat.seat_id}>
-              <td>{seat.seat_id}</td>
-              <td>{seat.bus_id}</td>
-              <td>{seat.location}</td>
-              <td>{seat.status}</td>
-              <td>
-                <button onClick={() => handleRemoveSeat(seat.seat_id)}>Remove</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div style={{
+      backgroundColor: '#ADD8E6',  // Light blue background color
+      minHeight: '100vh',  // Ensure the background covers full viewport height
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    }}>
+      <Container maxWidth="lg">
+        <Paper sx={{
+          padding: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          boxShadow: 3,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)', // Light transparent background for content
+        }}>
+          <Typography variant="h4" gutterBottom align="center">Manage Seats</Typography>
+
+          <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Seat ID</TableCell>
+                  <TableCell>Bus ID</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {seats.map((seat) => (
+                  <TableRow key={seat.seat_id}>
+                    <TableCell>{seat.seat_id}</TableCell>
+                    <TableCell>{seat.bus_id}</TableCell>
+                    <TableCell>{seat.location}</TableCell>
+                    <TableCell>{seat.status}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleRemoveSeat(seat.seat_id)}
+                      >
+                        Remove
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Container>
     </div>
   );
 }

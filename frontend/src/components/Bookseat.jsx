@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Select, MenuItem, Button, Typography,
+  FormControl, InputLabel, Grid, Box
+} from '@mui/material';
 
 const BookSeat = () => {
   const [locations, setLocations] = useState([]);
@@ -6,129 +10,202 @@ const BookSeat = () => {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedBus, setSelectedBus] = useState('');
   const [seats, setSeats] = useState([]);
+  const [allocatedSeat, setAllocatedSeat] = useState(null);
+  const [studentId, setStudentId] = useState(''); // Add student ID state
 
-  // Fetch locations on mount
+  // Load the allocated seat from localStorage
+  useEffect(() => {
+    const storedSeat = localStorage.getItem('allocatedSeat');
+    if (storedSeat) {
+      setAllocatedSeat(storedSeat);
+    }
+
+    // Load the student ID from localStorage or another source
+    const storedStudentId = localStorage.getItem('studentId');
+    if (storedStudentId) {
+      setStudentId(storedStudentId);
+    } else {
+      // Optionally, handle the case if the student ID is not found
+      console.error('Student ID not found!');
+    }
+  }, []);
+
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/locations');
-        const data = await response.json();
+        const res = await fetch('http://127.0.0.1:5000/locations');
+        const data = await res.json();
         setLocations(data.locations || []);
-      } catch (error) {
-        alert('Error fetching locations: ' + error.message);
+      } catch (err) {
+        alert('Failed to fetch locations: ' + err.message);
       }
     };
     fetchLocations();
   }, []);
 
-  // Fetch buses when a location is selected
   useEffect(() => {
+    if (!selectedLocation) return;
     const fetchBuses = async () => {
-      if (!selectedLocation) return;
       try {
-        const response = await fetch(`http://127.0.0.1:5000/buses/${selectedLocation}`);
-        const data = await response.json();
-        console.log('Fetched buses:', data.buses);
+        const res = await fetch(`http://127.0.0.1:5000/buses/${selectedLocation}`);
+        const data = await res.json();
         setBuses(data.buses || []);
-      } catch (error) {
-        alert('Error fetching buses: ' + error.message);
+      } catch (err) {
+        alert('Failed to fetch buses: ' + err.message);
       }
     };
     fetchBuses();
   }, [selectedLocation]);
 
-  // Fetch seat layout for selected bus
   useEffect(() => {
+    if (!selectedBus) return;
     const fetchSeats = async () => {
-      if (!selectedBus) return;
       try {
-        const response = await fetch(`http://127.0.0.1:5000/seat-status/${selectedBus}`);
-        const data = await response.json();
+        const res = await fetch(`http://127.0.0.1:5000/seat-status/${selectedBus}`);
+        const data = await res.json();
         setSeats(data.seats || []);
-      } catch (error) {
-        alert('Error fetching seats: ' + error.message);
+      } catch (err) {
+        alert('Failed to fetch seats: ' + err.message);
       }
     };
     fetchSeats();
   }, [selectedBus]);
 
-  const handleSeatClick = async (seatId) => {
-    const studentId = 'student1';
+  const handleSeatBooking = async () => {
+    if (!studentId) {
+      alert('Student ID is required!');
+      return;
+    }
+
     try {
-      const response = await fetch('http://127.0.0.1:5000/allocate-seat', {
+      const res = await fetch('http://127.0.0.1:5000/allocate-seat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_id: studentId, bus_id: selectedBus, seat_id: seatId }),
+        body: JSON.stringify({
+          student_id: studentId,  // Use student ID here
+          location: selectedLocation,
+          bus_id: selectedBus,
+        }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.status === 'success') {
-        alert(`Seat ${seatId} booked successfully!`);
-        setSeats((prevSeats) =>
-          prevSeats.map((seat) =>
-            seat.seat_id === seatId ? { ...seat, status: 'filled' } : seat
+        alert('Seat booked successfully!');
+        setAllocatedSeat(data.seat_id);  // Store the allocated seat in state
+        localStorage.setItem('allocatedSeat', data.seat_id);  // Save the allocated seat in localStorage
+        setSeats(prev =>
+          prev.map(seat =>
+            seat.seat_id === data.seat_id ? { ...seat, status: 'mySeat' } : seat
           )
         );
       } else {
-        alert('Failed to book seat.');
+        alert('Seat booking failed.');
       }
-    } catch (error) {
-      alert('Error booking seat: ' + error.message);
+    } catch (err) {
+      alert('Error booking seat: ' + err.message);
+    }
+  };
+
+  const getSeatColor = (status, seatId) => {
+    if (seatId === allocatedSeat) return 'blue';  // Return blue for the user's seat
+    switch (status) {
+      case 'filled': return 'green';  // Filled seats should be green
+      case 'available': return 'red'; // Available seats should be red
+      default: return 'lightgray';   // Default to light gray for other statuses
     }
   };
 
   return (
-    <div>
-      <h2>Book a Seat</h2>
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Book a Seat
+      </Typography>
 
-      {/* Location Dropdown */}
-      <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
-        <option value="">Select Location</option>
-        {locations.map((location, idx) => (
-          <option key={idx} value={location}>{location}</option>
-        ))}
-      </select>
-
-      {/* Bus Dropdown */}
-      {selectedLocation && (
-        <select value={selectedBus} onChange={(e) => setSelectedBus(e.target.value)}>
-          <option value="">Select Bus</option>
-          {buses.map((bus, idx) => (
-            <option key={idx} value={bus.bus_id}>{bus.bus_id}</option>
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Select Location</InputLabel>
+        <Select
+          value={selectedLocation}
+          onChange={(e) => {
+            setSelectedLocation(e.target.value);
+            setSelectedBus('');
+            setSeats([]);
+            setAllocatedSeat(null); // Reset the allocated seat when location changes
+          }}
+          label="Select Location"
+        >
+          <MenuItem value=""><em>-- Select --</em></MenuItem>
+          {locations.map((loc, idx) => (
+            <MenuItem key={idx} value={loc}>{loc}</MenuItem>
           ))}
-        </select>
+        </Select>
+      </FormControl>
+
+      {selectedLocation && (
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Select Bus</InputLabel>
+          <Select
+            value={selectedBus}
+            onChange={(e) => setSelectedBus(e.target.value)}
+            label="Select Bus"
+          >
+            <MenuItem value=""><em>-- Select --</em></MenuItem>
+            {buses.map((bus, idx) => (
+              <MenuItem
+                key={idx}
+                value={bus.bus_id}
+                sx={{
+                  backgroundColor: bus.status === 'filled' ? 'red' : undefined,
+                  color: bus.status === 'filled' ? 'white' : undefined,
+                }}
+              >
+                {bus.bus_id}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       )}
 
-      {/* Seat Layout */}
       {selectedBus && (
-        <div>
-          <h3>Seat Layout</h3>
+        <Box mt={4}>
+          <Typography variant="h6" gutterBottom>
+            Seat Layout
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={handleSeatBooking}
+            sx={{ mb: 2 }}
+          >
+            Book Seat
+          </Button>
+
           {seats.length > 0 ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', maxWidth: '300px' }}>
+            <Grid container spacing={2}>
               {seats.map((seat, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSeatClick(seat.seat_id)}
-                  disabled={seat.status === 'filled'}
-                  style={{
-                    margin: '5px',
-                    padding: '10px',
-                    backgroundColor: seat.status === 'available' ? 'green' : 'red',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: seat.status === 'available' ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  {seat.seat_id}
-                </button>
+                <Grid item key={idx}>
+                  <Button
+                    variant="contained"
+                    disabled={seat.status === 'filled'}
+                    sx={{
+                      backgroundColor: getSeatColor(seat.status, seat.seat_id),
+                      color: 'white',
+                      minWidth: 50,
+                      minHeight: 50,
+                      '&:disabled': {
+                        backgroundColor: 'gray',
+                        cursor: 'not-allowed',
+                      },
+                    }}
+                  >
+                    {seat.seat_id}
+                  </Button>
+                </Grid>
               ))}
-            </div>
+            </Grid>
           ) : (
-            <p>No seats available</p>
+            <Typography>No seats available.</Typography>
           )}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

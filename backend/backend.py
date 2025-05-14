@@ -72,40 +72,89 @@ def fetch_filled_seats(bus_id):
     return [seat['seat_id'] for seat in filled_seats]
 
 # =============== Allocate Seat ===============
-def allocate_seat(student_id, bus_id, seat_id):
-    retries = 3  # Number of retries
-    delay = 2  # Time to wait before retrying in seconds
-    
+def allocate_seat(student_id, location):
+    retries = 3
+    delay = 2  # seconds
+
     for attempt in range(retries):
+        conn = None
         try:
             conn = get_db_connection()
-            cursor = conn.cursor()
+            cursor = conn.cursor(dictionary=True)
 
-            # Try to update the seat status
-            cursor.execute(
-                "UPDATE seats SET status = 'filled' WHERE bus_id = %s AND seat_id = %s AND status = 'available'",
-                (bus_id, seat_id)
-            )
+            # Step 1: Get a bus with available seats for the given location
+            cursor.execute("""
+                SELECT b.bus_id
+                FROM buses b
+                JOIN seats s ON b.bus_id = s.bus_id
+                WHERE b.location = %s AND s.status = 'available'
+                GROUP BY b.bus_id
+                HAVING COUNT(s.seat_id) > 0
+                ORDER BY b.bus_id
+                LIMIT 1
+            """, (location,))
+            bus_result = cursor.fetchone()
 
-            # If no rows were affected, it means the seat was already filled
+            if not bus_result:
+                return {"status": "error", "message": "No available buses or seats in your location"}
+
+            bus_id = bus_result['bus_id']
+
+            # Step 2: Get the lowest-numbered available seat
+            cursor.execute("""
+                SELECT seat_id
+                FROM seats
+                WHERE bus_id = %s AND status = 'available'
+                ORDER BY seat_id
+                LIMIT 1
+            """, (bus_id,))
+            seat_result = cursor.fetchone()
+
+            if not seat_result:
+                return {"status": "error", "message": "No available seat in selected bus"}
+
+            seat_id = seat_result['seat_id']
+
+            # Step 3: Try to update the seat status (optimistic locking)
+            cursor.execute("""
+                UPDATE seats
+                SET status = 'filled'
+                WHERE bus_id = %s AND seat_id = %s AND status = 'available'
+            """, (bus_id, seat_id))
+
             if cursor.rowcount == 0:
-                return {"status": "error", "message": "Seat is already booked"}
+                # Seat taken by another student in the meantime — retry
+                if attempt < retries - 1:
+                    time.sleep(delay)
+                    continue
+                return {"status": "error", "message": "Seat booking conflict. Please try again."}
+
+            # Step 4: Create booking entry
+            cursor.execute("""
+                INSERT INTO bookings (student_id, bus_id, location, seat_id, booking_time)
+                VALUES (%s, %s, %s, %s, NOW())
+            """, (student_id, bus_id, location, seat_id))
 
             conn.commit()
-            conn.close()
 
-            return {"status": "success", "message": "Seat booked successfully"}
+            return {
+                "status": "success",
+                "message": f"Seat {seat_id} in Bus {bus_id} booked successfully.",
+                "seat_id": seat_id,
+                "bus_id": bus_id
+            }
 
         except Error as e:
-            # Check for lock wait timeout or any other database errors
-            if e.errno == 1205:  # Lock wait timeout error code
-                if attempt < retries - 1:
-                    time.sleep(delay)  # Wait before retrying
-                    continue
-                else:
-                    return {"status": "error", "message": "Transaction timed out after several attempts"}
-            else:
-                return {"status": "error", "message": str(e)}
+            if e.errno == 1205 and attempt < retries - 1:  # Lock wait timeout
+                time.sleep(delay)
+                continue
+            return {"status": "error", "message": str(e)}
+        
+        finally:
+            if conn:
+                cursor.close()
+                conn.close()
+
 
 # =============== Register Student ===============
 def register_student(student_id, name, password):
@@ -230,10 +279,12 @@ def add_bus(bus_id, location):
             ('1B', bus_id, location, 'available'),
             ('1C', bus_id, location, 'available'),
             ('1D', bus_id, location, 'available'),
+            ('1E', bus_id, location, 'available'),
             ('2A', bus_id, location, 'available'),
             ('2B', bus_id, location, 'available'),
             ('2C', bus_id, location, 'available'),
-            ('2D', bus_id, location, 'available')
+            ('2D', bus_id, location, 'available'),
+            ('2E', bus_id, location, 'available')
         ]
         
         # Insert seats into the seats table
