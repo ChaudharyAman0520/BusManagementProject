@@ -305,6 +305,9 @@ def remove_bus(bus_id):
         connection = get_db_connection()
         cursor = connection.cursor()
 
+        # Delete bookings associated with the bus (which reference seats)
+        cursor.execute("DELETE FROM bookings WHERE bus_id = %s", (bus_id,))
+        
         # First, remove the seats associated with the bus
         cursor.execute("DELETE FROM seats WHERE bus_id = %s", (bus_id,))
 
