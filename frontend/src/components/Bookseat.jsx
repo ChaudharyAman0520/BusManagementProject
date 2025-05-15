@@ -108,9 +108,9 @@ const BookSeat = () => {
   const getSeatColor = (status, seatId) => {
     if (seatId === allocatedSeat) return 'blue';  // Return blue for the user's seat
     switch (status) {
-      case 'filled': return 'green';  // Filled seats should be green
-      case 'available': return 'red'; // Available seats should be red
-      default: return 'lightgray';   // Default to light gray for other statuses
+      case 'filled': return 'red';  // Filled seats should be green
+      case 'available': return 'green'; // Available seats should be red
+      default: return 'red';   // Default to light gray for other statuses
     }
   };
 
