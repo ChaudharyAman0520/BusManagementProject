@@ -9,7 +9,6 @@ import AdminDashboard from './components/AdminDashboard';
 //import ManageBuses from './components/ManageBuses';
 import Bookings from './components/Bookings';  // Import Bookings
 import ManageSeats from './components/ManageSeats';  // Import ManageSeats
-import './App.css';
 
 function App() {
   return (
