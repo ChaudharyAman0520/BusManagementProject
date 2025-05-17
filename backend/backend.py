@@ -1,19 +1,20 @@
-import mysql.connector
+import pymysql
+import pymysql.cursors
 import time
-from mysql.connector import Error
 import heapq
 
-# MySQL database connection
+# MySQL database connection using PyMySQL
 def get_db_connection():
     try:
-        connection = mysql.connector.connect(
+        connection = pymysql.connect(
             host='localhost',
             user='root',
-            password='Aman@123',
-            database='bus_management'
+            password='1234',
+            database='bus_management',
+            cursorclass=pymysql.cursors.DictCursor
         )
         return connection
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return None
 
@@ -24,11 +25,11 @@ def _fetch_all(query, params=None):
         return []
     cursor = None
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute(query, params or ())
         result = cursor.fetchall()
         return result
-    except mysql.connector.Error as e:
+    except pymysql.MySQLError as e:
         print(f"Database error: {e}")
         return []
     finally:
@@ -79,18 +80,15 @@ def allocate_seat(student_id, location):
         conn = None
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor()
 
-            # Step 0: Fetch all existing bookings into a hashmap for quick lookup
             cursor.execute("SELECT student_id FROM bookings")
             existing_bookings = cursor.fetchall()
             booking_map = {b['student_id']: True for b in existing_bookings}
 
-            # Check if student already booked
             if student_id in booking_map:
                 return {"status": "error", "message": "Student already has a booking."}
 
-            # Step 1: Load all available seats for all buses in this location
             cursor.execute("""
                 SELECT bus_id, seat_id
                 FROM seats
@@ -102,17 +100,14 @@ def allocate_seat(student_id, location):
             if not seats:
                 return {"status": "error", "message": "No available seats in your location"}
 
-            # Step 2: Build a min-heap with (numeric_key, bus_id, seat_id)
             heap = []
             for seat in seats:
                 numeric_key = convert_seat_id_to_number(seat['seat_id'])
                 heapq.heappush(heap, (numeric_key, seat['bus_id'], seat['seat_id']))
 
-            # Step 3: Pop the lowest seat and try booking
             while heap:
                 _, bus_id, seat_id = heapq.heappop(heap)
 
-                # Try to update the seat status to 'filled' atomically
                 cursor.execute("""
                     UPDATE seats
                     SET status = 'filled'
@@ -120,10 +115,8 @@ def allocate_seat(student_id, location):
                 """, (bus_id, seat_id))
 
                 if cursor.rowcount == 0:
-                    # Seat was booked by someone else, try next seat
                     continue
 
-                # Step 4: Insert booking record
                 cursor.execute("""
                     INSERT INTO bookings (student_id, bus_id, location, seat_id, booking_time)
                     VALUES (%s, %s, %s, %s, NOW())
@@ -138,17 +131,13 @@ def allocate_seat(student_id, location):
                     "bus_id": bus_id
                 }
 
-            # If we exhausted heap without booking, retry (or fail)
             if attempt < retries - 1:
                 time.sleep(delay)
                 continue
 
             return {"status": "error", "message": "Seat booking conflict. Please try again."}
 
-        except Error as e:
-            if e.errno == 1205 and attempt < retries - 1:  # Lock wait timeout
-                time.sleep(delay)
-                continue
+        except pymysql.MySQLError as e:
             return {"status": "error", "message": str(e)}
 
         finally:
@@ -168,9 +157,9 @@ def register_student(student_id, name, password):
                        (student_id, name, password))
         conn.commit()
         return {"status": "success", "message": f"Student {name} registered successfully"}
-    except mysql.connector.Error as err:
-        if err.errno == 1062:
-            return {"status": "error", "message": "Student ID already registered"}
+    except pymysql.err.IntegrityError as err:
+        return {"status": "error", "message": "Student ID already registered"}
+    except pymysql.MySQLError as err:
         return {"status": "error", "message": str(err)}
     finally:
         if cursor:
@@ -187,14 +176,13 @@ def login_student(student_id, password):
         return {"status": "error", "message": "Invalid student ID or password"}
 
 # =============== Admin Functions ===============
-
 def get_admin_stats():
     conn = get_db_connection()
     if not conn:
         return {"status": "error", "message": "Database connection error"}
     cursor = None
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) AS total_buses FROM buses")
         total_buses = cursor.fetchone()['total_buses']
 
@@ -209,7 +197,7 @@ def get_admin_stats():
             "total_bookings": total_bookings,
             "total_students": total_students
         }
-    except mysql.connector.Error as e:
+    except pymysql.MySQLError as e:
         return {"status": "error", "message": str(e)}
     finally:
         if cursor:
@@ -255,23 +243,10 @@ def add_bus(bus_id, location):
         if not conn:
             return {'status': 'error', 'message': 'Database connection error'}
         cursor = conn.cursor()
-
-        # Add bus to the buses table
         cursor.execute("INSERT INTO buses (bus_id, location) VALUES (%s, %s)", (bus_id, location))
 
-        # Create default seats for the bus
-        seats = [
-            ('1A', bus_id, location, 'available'),
-            ('1B', bus_id, location, 'available'),
-            ('1C', bus_id, location, 'available'),
-            ('1D', bus_id, location, 'available'),
-            ('1E', bus_id, location, 'available'),
-            ('2A', bus_id, location, 'available'),
-            ('2B', bus_id, location, 'available'),
-            ('2C', bus_id, location, 'available'),
-            ('2D', bus_id, location, 'available'),
-            ('2E', bus_id, location, 'available')
-        ]
+        seats = [(f'{row}{col}', bus_id, location, 'available')
+                 for row in range(1, 3) for col in ['A', 'B', 'C', 'D', 'E']]
 
         cursor.executemany("INSERT INTO seats (seat_id, bus_id, location, status) VALUES (%s, %s, %s, %s)", seats)
         conn.commit()
@@ -292,12 +267,8 @@ def remove_bus(bus_id):
         if not conn:
             return {'status': 'error', 'message': 'Database connection error'}
         cursor = conn.cursor()
-
-        # Delete bookings associated with the bus
         cursor.execute("DELETE FROM bookings WHERE bus_id = %s", (bus_id,))
-        # Delete seats associated with the bus
         cursor.execute("DELETE FROM seats WHERE bus_id = %s", (bus_id,))
-        # Delete the bus itself
         cursor.execute("DELETE FROM buses WHERE bus_id = %s", (bus_id,))
         conn.commit()
         return {'status': 'success', 'message': 'Bus and related data removed successfully'}
@@ -308,5 +279,3 @@ def remove_bus(bus_id):
             cursor.close()
         if conn:
             conn.close()
-
-       
