@@ -216,7 +216,7 @@ def fetch_all_seats():
     query = "SELECT * FROM seats"
     return _fetch_all(query)
 
-def delete_seat(seat_id):
+def delete_booking(seat_id, bus_id, location):
     conn = None
     cursor = None
     try:
@@ -224,9 +224,26 @@ def delete_seat(seat_id):
         if not conn:
             return {'status': 'error', 'message': 'Database connection error'}
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM seats WHERE seat_id = %s", (seat_id,))
+
+        # Delete the booking
+        cursor.execute(
+            "DELETE FROM bookings WHERE seat_id = %s AND bus_id = %s AND location = %s",
+            (seat_id, bus_id, location)
+        )
+        
+        if cursor.rowcount == 0:
+            return {'status': 'error', 'message': 'No booking found to remove'}
+
+        # Update the seat status to 'available' after deleting booking
+        cursor.execute(
+            "UPDATE seats SET status = 'available' WHERE seat_id = %s AND bus_id = %s AND location = %s",
+            (seat_id, bus_id, location)
+        )
+        
         conn.commit()
-        return {'status': 'success', 'message': 'Seat removed successfully'}
+        
+        return {'status': 'success', 'message': 'Booking removed and seat status updated successfully'}
+
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
     finally:

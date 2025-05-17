@@ -1,0 +1,13 @@
+import mysql.connector
+
+try:
+    conn = mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='1234',
+        database='bus_management'
+    )
+    print("Connected!")
+    conn.close()
+except mysql.connector.Error as err:
+    print(f"Error: {err}")
