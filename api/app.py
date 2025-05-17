@@ -113,10 +113,9 @@ def allocate_seat():
 
     return jsonify(result)
 
-
-@app.route('/admin/remove-seat/<seat_id>', methods=['DELETE'])
-def remove_seat_route(seat_id):
-    result = backend.delete_seat(seat_id)
+@app.route('/admin/remove-booking/<seat_id>/<bus_id>/<location>', methods=['DELETE'])
+def remove_booking_route(seat_id, bus_id, location):
+    result = backend.delete_booking(seat_id, bus_id, location)
     return jsonify(result)
 
 @app.route('/admin/add-bus', methods=['POST'])
